@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f1ea">
+<title>Nişan Fotoğrafları</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f1ea;
+    --card: #fffdfa;
+    --ink: #2f2925;
+    --muted: #8a7f76;
+    --line: #eadfd3;
+    --accent: #b08a5b;
+    --accent-dark: #8f6c42;
+    --rose: #d9b8a8;
+    --ok: #6f8f6a;
+    --err: #b5584a;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(1200px 500px at 50% -200px, #fbe9df 0%, transparent 70%),
+      var(--bg);
+    color: var(--ink);
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 36px 20px 120px; }
+
+  /* Başlık */
+  header { text-align: center; margin-bottom: 28px; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--accent-dark); font-weight: 600;
+  }
+  h1 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 500; font-size: clamp(40px, 11vw, 56px);
+    line-height: 1.05; margin: 10px 0 8px;
+  }
+  h1 .amp { font-style: italic; color: var(--accent); padding: 0 .08em; }
+  .date { color: var(--muted); font-size: 15px; }
+  .ornament { display: flex; align-items: center; gap: 12px; justify-content: center; margin: 18px auto 0; color: var(--rose); }
+  .ornament::before, .ornament::after { content: ""; height: 1px; width: 56px; background: var(--line); }
+  .intro { text-align: center; color: #5d544d; margin: 18px 6px 0; }
+
+  /* Kart */
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 20px;
+    box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 12px 32px -18px rgba(90,60,30,.25);
+  }
+  label.field { display: block; font-size: 13px; font-weight: 600; color: #5d544d; margin-bottom: 8px; }
+  label.field span { font-weight: 400; color: var(--muted); }
+  input[type=text] {
+    width: 100%; font: inherit; font-size: 16px; color: var(--ink);
+    padding: 13px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff;
+    outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  input[type=text]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(176,138,91,.15); }
+
+  .picker {
+    margin-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 26px 16px; border: 1.5px dashed #d8c6b2; border-radius: 14px;
+    background: #fdf8f2; cursor: pointer; text-align: center; transition: background .15s, border-color .15s;
+  }
+  .picker:active, .picker.drag { background: #f8eee2; border-color: var(--accent); }
+  .picker svg { color: var(--accent); }
+  .picker strong { font-size: 16px; }
+  .picker small { color: var(--muted); font-size: 13px; }
+  #fileInput { display: none; }
+
+  /* Önizleme ızgarası */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+  .grid:empty { display: none; }
+  .thumb {
+    position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden;
+    background: #efe6dc; display: flex; align-items: center; justify-content: center;
+  }
+  .thumb img, .thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb .ph { color: var(--muted); font-size: 12px; padding: 6px; text-align: center; word-break: break-all; }
+  .thumb .remove {
+    position: absolute; top: 5px; right: 5px; width: 26px; height: 26px; border-radius: 50%;
+    border: 0; background: rgba(30,20,10,.55); color: #fff; font-size: 16px; line-height: 26px; cursor: pointer;
+  }
+  .thumb .badge {
+    position: absolute; left: 5px; bottom: 5px; font-size: 10px; font-weight: 700; letter-spacing: .04em;
+    background: rgba(30,20,10,.55); color: #fff; padding: 2px 6px; border-radius: 6px;
+  }
+  .thumb .veil {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,253,250,.55); backdrop-filter: blur(1px);
+  }
+  .thumb.done .veil { background: rgba(111,143,106,.35); }
+  .thumb.fail .veil { background: rgba(181,88,74,.35); }
+  .ring { width: 44px; height: 44px; }
+  .ring circle { fill: none; stroke-width: 4; }
+  .ring .bgc { stroke: rgba(255,255,255,.8); }
+  .ring .fg { stroke: var(--accent-dark); stroke-linecap: round; transition: stroke-dashoffset .25s; transform: rotate(-90deg); transform-origin: 50% 50%; }
+  .tick { width: 40px; height: 40px; border-radius: 50%; background: var(--ok); color: #fff; display: flex; align-items: center; justify-content: center; }
+  .retry { border: 0; background: var(--err); color: #fff; font: inherit; font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 20px; cursor: pointer; }
+
+  .summary { margin-top: 12px; font-size: 13px; color: var(--muted); text-align: center; }
+
+  /* Alt çubuk */
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+    padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg) 70%, rgba(247,241,234,0));
+  }
+  .bar-inner { max-width: 520px; margin: 0 auto; }
+  .btn {
+    width: 100%; border: 0; border-radius: 14px; padding: 16px; cursor: pointer;
+    font: inherit; font-size: 16px; font-weight: 700; color: #fff; background: var(--accent-dark);
+    box-shadow: 0 10px 24px -12px rgba(143,108,66,.8); transition: transform .1s, opacity .2s;
+  }
+  .btn:active { transform: scale(.99); }
+  .btn:disabled { opacity: .45; box-shadow: none; cursor: default; }
+  .btn.secondary { background: #fff; color: var(--accent-dark); border: 1px solid var(--line); box-shadow: none; }
+  .progress { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; margin-bottom: 10px; display: none; }
+  .progress > div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+  .status { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 8px; min-height: 1em; }
+
+  /* Teşekkür ekranı */
+  .thanks { text-align: center; padding: 34px 20px; display: none; }
+  .thanks .heart { font-size: 40px; }
+  .thanks h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 500; font-size: 34px; margin: 8px 0 6px; }
+  .thanks p { color: #5d544d; margin: 0 0 22px; }
+
+  .toast {
+    position: fixed; left: 50%; top: 16px; transform: translateX(-50%) translateY(-120%);
+    background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px;
+    transition: transform .25s; z-index: 10; max-width: 90vw; text-align: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 28px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="eyebrow">Nişanımıza hoş geldiniz</div>
+    <h1 id="couple"></h1>
+    <div class="date" id="date"></div>
+    <div class="ornament">✦</div>
+    <p class="intro" id="intro">Bu güzel günde çektiğiniz fotoğrafları ve videoları bizimle paylaşır mısınız? Hepsi tek bir albümde toplanacak.</p>
+  </header>
+
+  <main>
+    <section class="card" id="uploadCard">
+      <label class="field" for="guestName">Adınız <span>(isteğe bağlı)</span></label>
+      <input type="text" id="guestName" placeholder="Örn. Ayşe Teyze" autocomplete="name" maxlength="60">
+
+      <label class="picker" id="picker" for="fileInput">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>
+        <strong>Fotoğraf ve video seç</strong>
+        <small>Galeriden birden fazla seçebilirsiniz</small>
+      </label>
+      <input type="file" id="fileInput" accept="image/*,video/*" multiple>
+
+      <div class="grid" id="grid"></div>
+      <div class="summary" id="summary"></div>
+    </section>
+
+    <section class="card thanks" id="thanks">
+      <div class="heart">💛</div>
+      <h2>Çok teşekkürler!</h2>
+      <p id="thanksText">Fotoğraflarınız bize ulaştı.</p>
+      <button class="btn secondary" id="moreBtn" type="button">Daha fazla ekle</button>
+    </section>
+  </main>
+
+  <footer id="footer"></footer>
+</div>
+
+<div class="bar" id="bar">
+  <div class="bar-inner">
+    <div class="status" id="status"></div>
+    <div class="progress" id="progress"><div></div></div>
+    <button class="btn" id="uploadBtn" type="button" disabled>Fotoğraf seçin</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== AYARLAR ===================== */
+const CONFIG = {
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx1dTvBLjqCTJYDyJG1y3gWSVSrYvyhs7ud_vWhctG8WZtXd1U6QfXK87EMckF1SgaM0g/exec',   // https://script.google.com/macros/s/.../exec
+  COUPLE: ['Fatih', 'Gülistan'],                            // iki isim
+  DATE: '28 Kasım 2026',                                   // ör. 12 Aralık 2026
+  FOOTER: 'Sevgiyle ♡',
+  EVENT_KEY: '',          // Code.gs'teki ETKINLIK_ANAHTARI ile aynı (boş bırakılabilir)
+  MAX_MB: 1024,           // tek dosya sınırı
+  PARALLEL: 2             // aynı anda yüklenecek dosya sayısı
+};
+/* =================================================== */
+
+const CHUNK = 4 * 1024 * 1024;        // 4 MB (256 KB'nin katı olmalı)
+const MAX_TRY = 6;
+
+const $ = (id) => document.getElementById(id);
+const grid = $('grid'), uploadBtn = $('uploadBtn'), statusEl = $('status');
+const progressEl = $('progress'), progressFill = progressEl.firstElementChild;
+
+$('couple').innerHTML = `${esc(CONFIG.COUPLE[0])}<span class="amp">&amp;</span>${esc(CONFIG.COUPLE[1])}`;
+$('date').textContent = CONFIG.DATE;
+$('footer').textContent = CONFIG.FOOTER;
+document.title = `${CONFIG.COUPLE[0]} & ${CONFIG.COUPLE[1]} · Nişan Fotoğrafları`;
+
+const nameInput = $('guestName');
+try { nameInput.value = localStorage.getItem('guestName') || ''; } catch (e) {}
+nameInput.addEventListener('change', () => { try { localStorage.setItem('guestName', nameInput.value.trim()); } catch (e) {} });
+
+/** @type {{id:number,file:File,el:HTMLElement,state:'ready'|'up'|'done'|'fail',sent:number,url?:string}[]} */
+let items = [];
+let uploading = false;
+let uploadedTotal = 0;
+let seq = 0;
+
+/* ---------- Dosya seçimi ---------- */
+$('fileInput').addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
+
+const picker = $('picker');
+['dragenter', 'dragover'].forEach(t => picker.addEventListener(t, e => { e.preventDefault(); picker.classList.add('drag'); }));
+['dragleave', 'drop'].forEach(t => picker.addEventListener(t, e => { e.preventDefault(); picker.classList.remove('drag'); }));
+picker.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+
+function addFiles(list) {
+  let skipped = 0;
+  for (const file of list) {
+    const isMedia = /^(image|video)\//.test(file.type) || /\.(heic|heif|jpe?g|png|gif|webp|mov|mp4|m4v|3gp|avi|mkv)$/i.test(file.name);
+    if (!isMedia || file.size === 0) { skipped++; continue; }
+    if (file.size > CONFIG.MAX_MB * 1024 * 1024) { toast(`"${file.name}" çok büyük (en fazla ${CONFIG.MAX_MB} MB).`); continue; }
+    if (items.some(i => i.file.name === file.name && i.file.size === file.size && i.state !== 'done')) continue;
+    const it = { id: ++seq, file, state: 'ready', sent: 0 };
+    it.el = makeThumb(it);
+    grid.appendChild(it.el);
+    items.push(it);
+  }
+  if (skipped) toast('Yalnızca fotoğraf ve video yüklenebilir.');
+  refresh();
+}
+
+function makeThumb(it) {
+  const el = document.createElement('div');
+  el.className = 'thumb';
+  const isVideo = (it.file.type || '').startsWith('video') || /\.(mov|mp4|m4v|3gp|avi|mkv)$/i.test(it.file.name);
+  it.url = URL.createObjectURL(it.file);
+  if (isVideo) {
+    const v = document.createElement('video');
+    v.src = it.url + '#t=0.1'; v.muted = true; v.playsInline = true; v.preload = 'metadata';
+    v.onerror = () => v.replaceWith(placeholder(it.file.name));
+    el.appendChild(v);
+    const b = document.createElement('span'); b.className = 'badge'; b.textContent = 'VİDEO'; el.appendChild(b);
+  } else {
+    const img = document.createElement('img');
+    img.src = it.url; img.alt = ''; img.loading = 'lazy';
+    img.onerror = () => img.replaceWith(placeholder(it.file.name));
+    el.appendChild(img);
+  }
+  const rm = document.createElement('button');
+  rm.className = 'remove'; rm.type = 'button'; rm.setAttribute('aria-label', 'Kaldır'); rm.textContent = '×';
+  rm.onclick = () => removeItem(it);
+  el.appendChild(rm);
+  return el;
+}
+
+function placeholder(name) {
+  const d = document.createElement('div'); d.className = 'ph'; d.textContent = name; return d;
+}
+
+function removeItem(it) {
+  if (it.state === 'up') return;
+  URL.revokeObjectURL(it.url);
+  it.el.remove();
+  items = items.filter(i => i !== it);
+  refresh();
+}
+
+/* ---------- Görünüm ---------- */
+function setVeil(it, html) {
+  let veil = it.el.querySelector('.veil');
+  if (!veil) { veil = document.createElement('div'); veil.className = 'veil'; it.el.appendChild(veil); }
+  veil.innerHTML = html;
+  const rm = it.el.querySelector('.remove'); if (rm) rm.style.display = it.state === 'ready' ? '' : 'none';
+}
+const R = 18, C = 2 * Math.PI * R;
+function ringHTML(p) {
+  return `<svg class="ring" viewBox="0 0 44 44"><circle class="bgc" cx="22" cy="22" r="${R}"/><circle class="fg" cx="22" cy="22" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - p)}"/></svg>`;
+}
+function paint(it) {
+  it.el.classList.toggle('done', it.state === 'done');
+  it.el.classList.toggle('fail', it.state === 'fail');
+  if (it.state === 'up') {
+    const ring = it.el.querySelector('.ring .fg');
+    if (ring) ring.setAttribute('stroke-dashoffset', C * (1 - it.sent / it.file.size));
+    else setVeil(it, ringHTML(it.sent / it.file.size));
+  } else if (it.state === 'done') {
+    setVeil(it, `<div class="tick"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>`);
+  } else if (it.state === 'fail') {
+    setVeil(it, `<button class="retry" type="button">Tekrar dene</button>`);
+    it.el.querySelector('.retry').onclick = () => { it.state = 'ready'; it.sent = 0; it.el.querySelector('.veil').remove(); paint(it); refresh(); startUpload(); };
+  } else {
+    const v = it.el.querySelector('.veil'); if (v) v.remove();
+    const rm = it.el.querySelector('.remove'); if (rm) rm.style.display = '';
+  }
+}
+
+function refresh() {
+  const pending = items.filter(i => i.state === 'ready' || i.state === 'fail');
+  const ready = items.filter(i => i.state === 'ready').length;
+  const totalBytes = items.reduce((s, i) => s + i.file.size, 0);
+  $('summary').textContent = items.length ? `${items.length} dosya · ${fmtSize(totalBytes)}` : '';
+
+  if (uploading) {
+    const all = items.reduce((s, i) => s + i.file.size, 0) || 1;
+    const sent = items.reduce((s, i) => s + (i.state === 'done' ? i.file.size : i.sent), 0);
+    const done = items.filter(i => i.state === 'done').length;
+    progressEl.style.display = 'block';
+    progressFill.style.width = (100 * sent / all).toFixed(1) + '%';
+    statusEl.textContent = `Yükleniyor… ${done}/${items.length} · lütfen sayfayı kapatmayın`;
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = `%${Math.floor(100 * sent / all)}`;
+  } else {
+    progressEl.style.display = 'none';
+    const failed = items.filter(i => i.state === 'fail').length;
+    statusEl.textContent = failed ? `${failed} dosya yüklenemedi. "Tekrar dene"ye dokunun.` : '';
+    uploadBtn.disabled = ready === 0;
+    uploadBtn.textContent = ready ? `${ready} dosyayı yükle` : (pending.length ? 'Tekrar deneyin' : 'Fotoğraf seçin');
+  }
+}
+
+/* ---------- Yükleme ---------- */
+uploadBtn.addEventListener('click', startUpload);
+
+async function startUpload() {
+  if (uploading) return;
+  if (!/^https:\/\/script\.google\.com\//.test(CONFIG.SCRIPT_URL)) {
+    toast('Kurulum tamamlanmamış: SCRIPT_URL ayarlanmalı.'); return;
+  }
+  const queue = items.filter(i => i.state === 'ready');
+  if (!queue.length) return;
+  uploading = true;
+  nameInput.disabled = true;
+  try { localStorage.setItem('guestName', nameInput.value.trim()); } catch (e) {}
+  let wakeLock = null;
+  try { wakeLock = await navigator.wakeLock?.request('screen'); } catch (e) {}
+  refresh();
+
+  const worker = async () => {
+    while (queue.length) {
+      const it = queue.shift();
+      it.state = 'up'; it.sent = 0; paint(it);
+      try {
+        await uploadFile(it);
+        it.state = 'done'; uploadedTotal++;
+      } catch (err) {
+        console.error(err);
+        it.state = 'fail';
+      }
+      paint(it); refresh();
+    }
+  };
+  await Promise.all(Array.from({ length: Math.max(1, CONFIG.PARALLEL) }, worker));
+
+  uploading = false;
+  nameInput.disabled = false;
+  try { await wakeLock?.release(); } catch (e) {}
+  refresh();
+
+  if (items.length && items.every(i => i.state === 'done')) showThanks();
+}
+
+async function uploadFile(it) {
+  const f = it.file;
+  const mime = f.type || guessMime(f.name);
+  let session = null;
+
+  for (let restart = 0; restart < 2; restart++) {
+    const init = await call({ action: 'init', name: f.name, mimeType: mime, size: f.size, guest: nameInput.value.trim() });
+    session = init.session;
+    let start = 0;
+    let restarted = false;
+
+    while (start < f.size) {
+      const end = Math.min(start + CHUNK, f.size);
+      const data = await toBase64(f.slice(start, end));
+      const r = await call({ action: 'chunk', session, start, total: f.size, data }, true);
+      if (r.yenidenBaslat) { restarted = true; break; }
+      if (r.done) { it.sent = f.size; paint(it); refresh(); return r.fileId; }
+      start = r.next > start ? r.next : end;  // Drive'ın onayladığı yerden devam et
+      it.sent = start; paint(it); refresh();
+    }
+    if (!restarted) throw new Error('Yükleme beklenmedik şekilde bitti.');
+    it.sent = 0; paint(it);
+  }
+  throw new Error('Yükleme oturumu tekrar tekrar sona erdi.');
+}
+
+/** Apps Script'e istek; geçici hatalarda bekleyip tekrar dener. */
+async function call(payload, allowRestart = false) {
+  if (CONFIG.EVENT_KEY) payload.key = CONFIG.EVENT_KEY;
+  let lastErr;
+  for (let i = 0; i < MAX_TRY; i++) {
+    try {
+      const res = await fetch(CONFIG.SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),             // text/plain → CORS ön isteği yok
+        redirect: 'follow'
+      });
+      if (!res.ok) throw Object.assign(new Error('HTTP ' + res.status), { retry: true });
+      const j = await res.json();
+      if (j.ok) return j;
+      if (allowRestart && j.yenidenBaslat) return j;
+      if (!j.tekrar) throw Object.assign(new Error(j.hata || 'Hata'), { retry: false });
+      lastErr = new Error(j.hata || 'Geçici hata');
+    } catch (err) {
+      if (err.retry === false) { toast(err.message); throw err; }
+      lastErr = err;
+    }
+    await sleep(Math.min(15000, 1200 * Math.pow(1.8, i)) + Math.random() * 800);
+  }
+  throw lastErr;
+}
+
+function toBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1] || '');
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+/* ---------- Teşekkür ---------- */
+function showThanks() {
+  $('uploadCard').style.display = 'none';
+  $('bar').style.display = 'none';
+  $('thanksText').textContent = `${uploadedTotal} dosya bize ulaştı. Bu anları paylaştığınız için çok teşekkür ederiz.`;
+  $('thanks').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+$('moreBtn').addEventListener('click', () => {
+  items.forEach(i => URL.revokeObjectURL(i.url));
+  items = []; grid.innerHTML = '';
+  $('thanks').style.display = 'none';
+  $('uploadCard').style.display = '';
+  $('bar').style.display = '';
+  refresh();
+  $('fileInput').click();
+});
+
+window.addEventListener('beforeunload', (e) => { if (uploading) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ---------- Yardımcılar ---------- */
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function fmtSize(b) { return b > 1e9 ? (b / 1e9).toFixed(1) + ' GB' : b > 1e6 ? (b / 1e6).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1e3)) + ' KB'; }
+function guessMime(n) {
+  const ext = (n.split('.').pop() || '').toLowerCase();
+  return ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', heic: 'image/heic', heif: 'image/heif', gif: 'image/gif', webp: 'image/webp',
+            mov: 'video/quicktime', mp4: 'video/mp4', m4v: 'video/x-m4v', '3gp': 'video/3gpp', avi: 'video/x-msvideo', mkv: 'video/x-matroska' })[ext] || 'application/octet-stream';
+}
+let toastTimer;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+refresh();
+</script>
+</body>
+</html>
